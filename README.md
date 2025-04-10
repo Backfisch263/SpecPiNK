@@ -1,7 +1,7 @@
 # SpecPiNk
-\
+
 **Spec**troscopic data reduction **Pi**peline for the **N**ord**k**uppel telescope
-\
+
 ## Functionality
 This package is currently under development and shall provide a convenient and easily accessible way to process
 spectroscopic data obtained with the LISA High luminosity spectrograph (Shelyak Instruments) on the 80cm telescope
