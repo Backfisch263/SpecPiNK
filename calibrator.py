@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .utils import load_fits_file, get_imagetype, save_fits_file
+from utils import load_fits_file, get_imagetype, save_fits_file
 
 class CalibrationCreator:
     def __init__(self, files):
