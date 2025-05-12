@@ -9,8 +9,6 @@ situated in the northern dome (Nordkuppel) of the Institute for Astronomy's obse
 \
 The processing shall include the application of image correction with Bias-, Dark- and Flat-Frames and the wavelength
 calibration.
-\
-The package will be based on pyreduce, which is a package to extract science data from echelle spectra.
 
 ## User stories
 \
