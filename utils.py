@@ -12,7 +12,6 @@ def get_imagetype(header):
     imagetype = header['IMAGETYP'].strip().lower()
     return imagetype
 
-
 """
 Save a FITS file with the given data and header.
 
@@ -28,3 +27,46 @@ def save_fits_file(filepath,  data, header=None, overwrite=True):
         os.makedirs(directory)
     fits.writeto(filepath, data, header, overwrite=overwrite)
     print(f"Saved FITS file: {filepath}")
+
+def group_files_by_imagetype(files, keywords=('bias', 'dark', 'flat', 'lamp', 'light')):
+    """
+    Group FITS files by IMAGETYP keyword.
+
+    Parameters:
+        files (list): List of FITS file paths.
+        keywords (tuple): Tuple of image type keywords to group (default: common types).
+
+    Returns:
+        groups (dict): Dictionary with imagetype as key and list of data arrays as value.
+        headers (dict): Dictionary with imagetype as key and list of FITS headers as value.
+    """
+    groups = {key: [] for key in keywords}
+    headers = {key: [] for key in keywords}
+
+    for file in files:
+        data, header = load_fits_file(file)
+        imagetyp = get_imagetype(header).lower()
+        for key in keywords:
+            if key in imagetyp:
+                groups[key].append(data)
+                headers[key].append(header)
+                break  # stop after first match to avoid double-counting
+
+    return groups, headers
+
+
+def get_filepaths_from_directory(filepath, filetype='.fits'):
+    """
+    Get a list of filepaths from a given directory.
+
+    Parameters:
+         filepath (str): Path to the directory.
+         filetype (str): File extension to filter by (default: '.fits').
+
+    Returns:
+        filepaths (list): List of filepaths for the given filetype in directory.
+    """
+    filepaths = [os.path.join(filepath, f)
+             for f in os.listdir(filepath)
+             if f.lower().endswith(filetype)]
+    return filepaths

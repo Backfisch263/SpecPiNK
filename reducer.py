@@ -1,40 +1,31 @@
 import numpy as np
+import os
 from spectrum import Spectrum
-from utils import load_fits_file, get_imagetype
+from utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
+
 
 class Reducer:
-    def __init__(self, science_file, calibration_files):
-        self.raw_data, self.header = load_fits_file(science_file)
-        self.calibration_data = self._load_calibration(calibration_files)
-        self.wavelength = None
+    def __init__(self, calibration_files_path):
+        self.calibration_files_path = calibration_files_path
+        self.calibration_data = self._load_calibration(calibration_files_path)[0]
+        self.calibration_headers = self._load_calibration(calibration_files_path)[1]
 
-    def _load_calibration(self, calibration_files):
-        cal_data = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
-        headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
-        for f in calibration_files:
-            data, header = load_fits_file(f)
-            imagetype = get_imagetype(header)
-            if 'bias' in imagetype:
-                cal_data['bias'].append(data)
-                headers['bias'].append(header)
-            elif 'dark' in imagetype:
-                cal_data['dark'].append(data)
-                headers['dark'].append(header)
-            elif 'flat' in imagetype:
-                cal_data['flat'].append(data)
-                headers['flat'].append(header)
-            elif 'lamp' in imagetype:
-                cal_data['lamp'].append(data)
-                headers['lamp'].append(header)
-            elif 'light' in imagetype:
-                cal_data['light'].append(data)
-                headers['light'].append(header)
-                
-        return cal_data
+    def _load_calibration(self, calibration_files_path):
+        calibration_files = get_filepaths_from_directory(calibration_files_path)
+        cal_data, headers = group_files_by_imagetype(calibration_files)
+        return cal_data, headers
 
     def bias_subtraction(self):
-        return
-        
+        bias = self.calibration_data['bias']
+        if bias:
+            calibration_frames_bias_subtracted = np.copy(self.calibration_data)-bias
+            del calibration_frames_bias_subtracted['bias']  # probably not the best way to do this
+            print('Bias frame subtracted from calibration frames.')
+            return calibration_frames_bias_subtracted
+        else:
+            print('No bias frames provided. Returning uncorrected calibration frames.')
+            return self.calibration_data
+
     def dark_subtraction(self):
         return
 

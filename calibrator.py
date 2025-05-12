@@ -1,10 +1,12 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from utils import load_fits_file, get_imagetype, save_fits_file
+from utils import load_fits_file, get_imagetype, save_fits_file, group_files_by_imagetype
+
 
 class CalibrationCreator:
-    def __init__(self, files):
+    def __init__(self, filepath):
+
         self.files = files
         self.stacks = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
         self.stack_headers = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
@@ -14,24 +16,7 @@ class CalibrationCreator:
         groups = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         # Group files by IMAGETYP
-        for file in self.files:
-            data, header = load_fits_file(file)
-            imagetyp = get_imagetype(header)
-            if 'bias' in imagetyp:
-                groups['bias'].append(data)
-                headers['bias'].append(header)
-            elif 'dark' in imagetyp:
-                groups['dark'].append(data)
-                headers['dark'].append(header)
-            elif 'flat' in imagetyp:
-                groups['flat'].append(data)
-                headers['flat'].append(header)
-            elif 'lamp' in imagetyp:
-                groups['lamp'].append(data)
-                headers['lamp'].append(header)
-            elif 'light' in imagetyp:
-                groups['light'].append(data)
-                headers['light'].append(header)
+        groups, headers = group_files_by_imagetype(self.files)
 
         # Combine using median
         for key in groups:
