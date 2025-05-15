@@ -12,7 +12,8 @@ authors = [
 dependencies = [
     "numpy",
     "scipy",
-    "matplotlib"
+    "matplotlib",
+    "astropy"
 ]
 
 [tool.setuptools]

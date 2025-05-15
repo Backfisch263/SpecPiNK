@@ -4,3 +4,4 @@ sphinx-autodoc-typehints>=3.0.1
 numpy>=2.2.4
 scipy>=1.15.2
 matplotlib>=3.10.0
+astropy>=6.1.3
