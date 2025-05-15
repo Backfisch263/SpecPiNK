@@ -1,16 +1,26 @@
 import matplotlib.pyplot as plt
 
 class Spectrum:
-    def __init__(self, wavelength, flux, error=None):
+    def __init__(self, wavelength, flux):
+        """
+        Initialize the spectrum object with a given set of attributes.
+
+        Attributes:
+            wavelength (ndarray): Wavelength axis of the spectrum
+            flux (ndarray): Flux axis of the spectrum
+        """
         self.wavelength = wavelength
         self.flux = flux
-        self.error = error
 
     def plot(self, title="Spectrum"):
+        """
+        Plot the spectrum and give it a title.
+
+        Parameters:
+            title (str): Title for the plot.
+        """
         plt.figure()
         plt.plot(self.wavelength, self.flux, label='Flux')
-        if self.error is not None:
-            plt.fill_between(self.wavelength, self.flux - self.error, self.flux + self.error, alpha=0.3, label='Error')
         plt.xlabel('Wavelength')
         plt.ylabel('Flux')
         plt.title(title)

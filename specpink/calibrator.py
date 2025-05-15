@@ -5,26 +5,39 @@ from .utils import load_fits_file, get_imagetype, save_fits_file, group_files_by
 
 
 class Calibrator:
-    def __init__(self, filepath):
+    """
+    Class to create stacked calibration frames from FITS files.
+    """
 
+    def __init__(self, filepath):
+        """
+        Initialize the Calibrator with a list of FITS files or directory path.
+
+        Parameters:
+            filepath (list of str): Paths to FITS files to be processed.
+        """
         self.files = filepath
         self.stacks = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
         self.stack_headers = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
         self.master_frames = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
 
     def create_stacks(self):
+        """
+        Group FITS files by IMAGETYP and create median-stacked images.
+
+        Returns:
+            dict: Dictionary of stacked image arrays by type.
+        """
         groups = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
-        # Group files by IMAGETYP
         groups, headers = group_files_by_imagetype(self.files)
 
-        # Combine using median
         for key in groups:
             if groups[key]:
                 stack = np.stack(groups[key], axis=0)
                 self.stacks[key] = np.median(stack, axis=0)
 
-                stack_header = headers[key][0].copy()   # Copy header, so the original header is not modified
+                stack_header = headers[key][0].copy()
                 self.stack_headers[key] = stack_header
                 print(f"Created {key} stack from {len(groups[key])} files")
             else:
@@ -34,6 +47,12 @@ class Calibrator:
         return self.stacks
 
     def normalize_flat(self):
+        """
+        Normalize the master flat field by removing large-scale features.
+
+        Returns:
+            ndarray or None: Normalized flat field image or None if unavailable.
+        """
         if self.stacks['flat'] is not None:
             flat = np.copy(self.stacks['flat'])
             flat_gaussfiltered = gaussian_filter(flat, sigma=5)
@@ -46,6 +65,13 @@ class Calibrator:
             return None
 
     def create_master_frames(self):
+        """
+        Create the final set of stacked calibration frames,
+        including a normalized flat field.
+
+        Returns:
+            dict: Dictionary of master calibration frames.
+        """
         if not self.stacks:
             print('No stacks created yet. Run create_stacks() first.')
             return None
@@ -60,9 +86,16 @@ class Calibrator:
                     print('Normalized flat field added to master frames.')
                 else:
                     print('No flat field image provided to add to master frames.')
+
             return self.master_frames
 
     def save_master_frames(self, output_dir='calibration_files'):
+        """
+        Save all master calibration frames as FITS files in the given directory.
+
+        Parameters:
+            output_dir (str): Directory where master FITS files will be saved.
+        """
         for key, frame in self.master_frames.items():
             if frame is not None:
                 header = self.stack_headers[key]
