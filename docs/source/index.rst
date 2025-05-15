@@ -26,12 +26,7 @@ Contents
    :maxdepth: 2
    :caption: Modules
 
-   calibrator
-   reducer
-   utils
-   spectrum
-   pipeline
-   main
+   modules
 
 Indices and Tables
 ------------------
