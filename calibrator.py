@@ -7,7 +7,7 @@ from utils import load_fits_file, get_imagetype, save_fits_file, group_files_by_
 class CalibrationCreator:
     def __init__(self, filepath):
 
-        self.files = files
+        self.files = filepath
         self.stacks = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
         self.stack_headers = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
         self.master_frames = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
@@ -16,7 +16,7 @@ class CalibrationCreator:
         groups = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         # Group files by IMAGETYP
-        groups, headers = group_files_by_imagetype(self.files)
+        groups, headers = group_files_by_imagetype(self.filepath)
 
         # Combine using median
         for key in groups:
