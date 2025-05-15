@@ -1,10 +1,10 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from utils import load_fits_file, get_imagetype, save_fits_file, group_files_by_imagetype
+from .utils import load_fits_file, get_imagetype, save_fits_file, group_files_by_imagetype
 
 
-class CalibrationCreator:
+class Calibrator:
     def __init__(self, filepath):
 
         self.files = filepath
@@ -16,7 +16,7 @@ class CalibrationCreator:
         groups = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
         # Group files by IMAGETYP
-        groups, headers = group_files_by_imagetype(self.filepath)
+        groups, headers = group_files_by_imagetype(self.files)
 
         # Combine using median
         for key in groups:
@@ -32,9 +32,7 @@ class CalibrationCreator:
                 print(f"No {key} frames provided.")
 
         return self.stacks
-    '''
-    Normalize flat field
-    '''
+
     def normalize_flat(self):
         if self.stacks['flat'] is not None:
             flat = np.copy(self.stacks['flat'])

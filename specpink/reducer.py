@@ -1,7 +1,7 @@
 import numpy as np
 import os
-from spectrum import Spectrum
-from utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
+from .spectrum import Spectrum
+from .utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
 
 
 class Reducer:
