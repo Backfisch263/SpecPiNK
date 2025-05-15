@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specpink"
+version = "0.1.0"
+description = "Spectroscopy reduction pipeline"
+authors = [
+    {name = "Andreas Bachofner", email = "a12027808@unet.univie.ac.at"}
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib"
+]
+
+[tool.setuptools]
+packages = ["specpink"]
