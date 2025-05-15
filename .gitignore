@@ -4,3 +4,5 @@ Data/
 *.ipynb
 *.fits
 *.pdf
+docs/build
+*.html
