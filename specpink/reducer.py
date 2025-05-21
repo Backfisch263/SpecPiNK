@@ -24,8 +24,8 @@ class Reducer:
             calibration_files_path (str): Path to directory containing calibration FITS files.
         """
         self.calibration_files_path = calibration_files_path
-        self.calibration_data = self._load_calibration(calibration_files_path)[0]
-        self.calibration_headers = self._load_calibration(calibration_files_path)[1]
+        self.calibration_data = self._load_calibration()[0]
+        self.calibration_headers = self._load_calibration()[1]
 
     def _load_calibration(self):
         """
@@ -48,9 +48,12 @@ class Reducer:
         """
         bias = self.calibration_data['bias']
         if bias:
-            self.calibration_data = self.calibration_data-bias
-            del self.calibration_data['bias']  # probably not the best way to do this
-            print('Bias frame subtracted from calibration frames.')
+            self.calibration_data['dark'] = self.calibration_data['dark']-bias
+            self.calibration_data['lamp_dark'] = self.calibration_data['lamp_dark']-bias
+            self.calibration_data['flat'] = self.calibration_data['flat']-bias
+            self.calibration_data['lamp'] = self.calibration_data['lamp']-bias
+            self.calibration_data['science'] = self.calibration_data['science']-bias
+            print('Bias frame subtracted from frames.')
             return self.calibration_data
         else:
             print('No bias frames provided. Returning uncorrected calibration frames.')
@@ -58,19 +61,35 @@ class Reducer:
 
     def dark_subtraction(self):
         """
-        Subtracts the dark frame from the other calibration frames (flats, lamps, science).
+        Subtracts the dark frames from the science frame.
 
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) dark subtraction.
         """
         dark = self.calibration_data['dark']
         if dark:
-            self.calibration_data = self.calibration_data-dark
-            del self.calibration_data['dark']  # probably not the best way to do this
-            print('Dark frame subtracted from calibration frames.')
+            self.calibration_data['science'] = self.calibration_data['science'] - dark
+            print('Dark frame subtracted from science frame.')
             return self.calibration_data
         else:
-            print('No dark frames provided. Returning uncorrected calibration frames.')
+            print('No dark frame provided. Returning uncorrected science frame.')
+            return self.calibration_data
+
+    def lamp_dark_subtraction(self):
+        """
+        Subtracts the lamp dark frame from the flat and lamp frames.
+
+        Returns:
+            self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) lamp dark subtraction.
+        """
+        lamp_dark = self.calibration_data['lamp_dark']
+        if lamp_dark:
+            self.calibration_data['flat'] = self.calibration_data['flat'] - lamp_dark
+            self.calibration_data['lamp'] = self.calibration_data['lamp'] - lamp_dark
+            print('Lamp Dark frame subtracted from flat and lamp frames.')
+            return self.calibration_data
+        else:
+            print('No lamp dark frames provided. Returning uncorrected calibration frames.')
             return self.calibration_data
 
     def flat_fielding(self):
@@ -80,7 +99,14 @@ class Reducer:
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) flat correction.
         """
-        return self.calibration_data
+        flat = self.calibration_data['flat']
+        if flat:
+            self.calibration_data['science'] = self.calibration_data['science']/flat
+            print('Flat field applied to science frame.')
+            return self.calibration_data
+        else:
+            print('No flat field provided. Returning uncorrected science frame.')
+            return self.calibration_data
 
     def wavelength_calibration(self):
         """

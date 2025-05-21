@@ -17,9 +17,9 @@ class Calibrator:
             filepath (list of str): Paths to FITS files to be processed.
         """
         self.files = filepath
-        self.stacks = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
-        self.stack_headers = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
-        self.master_frames = {'bias': None, 'dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.stacks = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.stack_headers = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.master_frames = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
 
     def create_stacks(self):
         """
@@ -28,8 +28,8 @@ class Calibrator:
         Returns:
             dict: Dictionary of stacked image arrays by type.
         """
-        groups = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
-        headers = {'bias': [], 'dark': [], 'flat': [], 'lamp': [], 'light': []}
+        groups = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
+        headers = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
         groups, headers = group_files_by_imagetype(self.files)
 
         for key in groups:
