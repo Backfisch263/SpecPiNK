@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
+import numpy as np
 
 class Spectrum:
     def __init__(self, wavelength, flux):
@@ -28,10 +28,14 @@ class Spectrum:
         plt.legend()
         plt.show()
 
-    def find_emission_peaks(self):
+    def save_spectrum_to_txt(self, filepath="spectrum.txt"):
         """
-        Find emission line peaks in the spectrum.
+        Save the 1D spectrum to a text file with two columns: wavelength and flux.
+
+        The output is tab-separated and includes a header line.
+
+        Parameters:
+            filepath (str): Path to the output .txt file. Defaults to 'spectrum.txt'.
         """
-        peaks, _ = find_peaks(self.flux, prominence=0.01)
-        peaks = peaks / len(self.wavelength)
-        return peaks
+        np.savetxt(filepath, np.column_stack((self.wavelength, self.flux)),
+                   header="Wavelength\tFlux", fmt="%.6f", delimiter="\t")

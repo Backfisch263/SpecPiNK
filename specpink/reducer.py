@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from spectrum import Spectrum
-from utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
+from utils import group_files_by_imagetype, get_filepaths_from_directory, save_fits_file
 
 
 class Reducer:
@@ -17,7 +17,7 @@ class Reducer:
         calibration_headers : dict
             Dictionary of headers for each calibration frame type.
     """
-    def __init__(self, calibration_files_path, target_path):
+    def __init__(self, calibration_files_path):
         """
         Initialize the Reducer with the path to calibration files.
 
@@ -25,7 +25,6 @@ class Reducer:
             calibration_files_path (str): Path to directory containing calibration FITS files.
         """
         self.calibration_files_path = calibration_files_path
-        self.target_path = target_path
         self.calibration_data = self._load_calibration()[0]
         self.calibration_headers = self._load_calibration()[1]
 
@@ -48,13 +47,12 @@ class Reducer:
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after bias subtraction.
         """
-        bias = self.calibration_data['bias']
-        if bias:
-            self.calibration_data['dark'] = np.array(self.calibration_data['dark'])-np.array(bias)
-            self.calibration_data['lamp_dark'] = self.calibration_data['lamp_dark']-bias
-            self.calibration_data['flat'] = self.calibration_data['flat']-bias
-            self.calibration_data['lamp'] = self.calibration_data['lamp']-bias
-            self.calibration_data['science'] = self.calibration_data['science']-bias
+        bias = self.calibration_data['bias'][0]
+        if bias is not []:
+            self.calibration_data['dark'] = self.calibration_data['dark'][0]-bias
+            self.calibration_data['lamp_dark'] = self.calibration_data['lamp_dark'][0]-bias
+            self.calibration_data['lamp'] = self.calibration_data['lamp'][0]-bias
+            self.calibration_data['light'] = self.calibration_data['light'][0]-bias
             print('Bias frame subtracted from frames.')
             return self.calibration_data
         else:
@@ -69,8 +67,8 @@ class Reducer:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) dark subtraction.
         """
         dark = self.calibration_data['dark']
-        if dark:
-            self.calibration_data['science'] = self.calibration_data['science'] - dark
+        if dark is not []:
+            self.calibration_data['light'] = self.calibration_data['light'] - dark
             print('Dark frame subtracted from science frame.')
             return self.calibration_data
         else:
@@ -85,7 +83,7 @@ class Reducer:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) lamp dark subtraction.
         """
         lamp_dark = self.calibration_data['lamp_dark']
-        if lamp_dark:
+        if lamp_dark is not []:
             self.calibration_data['lamp'] = self.calibration_data['lamp'] - lamp_dark
             print('Lamp Dark frame subtracted from flat and lamp frames.')
             return self.calibration_data
@@ -100,9 +98,9 @@ class Reducer:
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) flat correction.
         """
-        flat = self.calibration_data['flat']
-        if flat:
-            self.calibration_data['science'] = self.calibration_data['science']/flat
+        flat = self.calibration_data['flat'][0]
+        if flat is not []:
+            self.calibration_data['light'] = self.calibration_data['light']/flat
             self.calibration_data['lamp'] = self.calibration_data['lamp']/flat
             print('Flat field applied to science frame and reference frames.')
             return self.calibration_data
@@ -111,8 +109,17 @@ class Reducer:
             return self.calibration_data
 
     def _select_trace_points(self):
-        science = self.calibration_data['science']
-        plt.imshow(science, origin='lower', cmap='gray', aspect='auto')
+        """
+        Display the 2D light frame and allow the user to interactively select two points.
+
+        These two points should lie along the center of the spectrum and are used to define
+        the trace line for extraction.
+
+        Returns:
+            points (lst): A list containing two (x, y) coordinate tuples selected by the user.
+        """
+        science = self.calibration_data['light']
+        plt.imshow(science, norm='log', origin='lower', cmap='gray', aspect='auto')
         plt.title("Click 2 points along the center of the spectrum")
         points = plt.ginput(2)
         plt.close()
@@ -120,24 +127,46 @@ class Reducer:
 
     def _compute_trace(self, p1, p2):
         """
-        Returns (x, y) coordinates for the trace line.
+        Compute a straight-line trace between two user-selected points.
+
+        This trace is used to define the aperture path through which the spectrum is extracted.
+
+        Parameters:
+            p1 (tuple): First (x, y) coordinate selected by the user.
+            p2 (tuple): Second (x, y) coordinate selected by the user.
+
+        Returns:
+            x, y (tuple): Arrays (x, y) representing the traced pixel coordinates along the line.
         """
         x1, y1 = p1
         x2, y2 = p2
         x = np.arange(int(x1), int(x2) + 1)
         y = y1 + (y2 - y1) / (x2 - x1) * (x - x1)
-        return x.astype(int), y.astype(int)
+        x = x.astype(int)
+        y = y.astype(int)
+        return x, y
 
-    def _extract_aperture(self, x_trace, y_trace, aperture_radius=8):
+    def _extract_aperture(self, x_trace, y_trace, aperture_radius=10):
         """
-        Sum along an aperture centered at (x_trace, y_trace) and return normalized flux.
+        Extract flux along a trace line by summing over a vertical aperture at each x position.
+
+        The flux is averaged within a window of ±aperture_radius pixels centered on the trace,
+        and normalized to its maximum value.
+
+        Parameters:
+            x_trace (np.ndarray): X-coordinates of the trace.
+            y_trace (np.ndarray): Y-coordinates of the trace.
+            aperture_radius (int): Half-width of the aperture in the spatial (y) direction.
+
+        Returns:
+            flux (np.ndarray): Normalized 1D flux array extracted from the 2D image.
         """
-        science = self.calibration_data['science']
+        science = self.calibration_data['light']
         flux = []
         for x, y_center in zip(x_trace, y_trace):
             y_min = int(y_center - aperture_radius)
             y_max = int(y_center + aperture_radius + 1)
-            flux_val = np.sum(science[y_min:y_max, x])/(y_max-y_min-1)
+            flux_val = np.mean(science[y_min:y_max, x])
             flux.append(flux_val)
         flux = np.array(flux)/np.max(flux)
         return flux
@@ -158,15 +187,17 @@ class Reducer:
 
         return Spectrum(wavelength, flux)
 
-    def wavelength_calibration(self, spectrum):
+    def save_master_frames(self, output_dir='master_files'):
         """
-        Apply wavelength calibration to a 1D spectrum.
+        Save all stacked calibration frames as FITS files in the given directory.
 
-        Returns:
-            self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) wavelength calibration.
+        Parameters:
+            output_dir (str): Directory where master FITS files will be saved.
         """
-        wavelength = spectrum.wavelength
-        flux = spectrum.flux
-
-        return Spectrum(wavelength, flux)
-
+        for key, frame in self.calibration_data.items():
+            if frame is not []:
+                header = self.calibration_headers[key][0]
+                filename = os.path.join(output_dir, f"master_{key}.fits")
+                save_fits_file(filename, frame, header)
+            else:
+                print(f"No master frame to save for {key}")
