@@ -1,4 +1,4 @@
-from pipeline import Pipeline
+from specpink.pipeline import Pipeline
 
 # change according to needs
 data_path = './raw_data'

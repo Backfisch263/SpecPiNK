@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from utils import save_fits_file, group_files_by_imagetype, get_filepaths_from_directory
+from specpink.utils import save_fits_file, group_files_by_imagetype, get_filepaths_from_directory
 
 
 class Stacker:

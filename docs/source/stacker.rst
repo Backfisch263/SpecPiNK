@@ -1,7 +1,7 @@
 calibrator module
 =================
 
-.. automodule:: specpink.calibrator
+.. automodule:: specpink.stacker
    :members:
    :undoc-members:
    :show-inheritance:

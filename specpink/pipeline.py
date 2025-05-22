@@ -1,5 +1,5 @@
-from stacker import Stacker
-from reducer import Reducer
+from specpink.stacker import Stacker
+from specpink.reducer import Reducer
 
 class Pipeline:
     """

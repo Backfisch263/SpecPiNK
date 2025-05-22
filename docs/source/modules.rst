@@ -4,8 +4,7 @@ specpink
 .. toctree::
    :maxdepth: 4
 
-   calibrator
-   main
+   stacker
    pipeline
    reducer
    spectrum

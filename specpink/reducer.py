@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from spectrum import Spectrum
-from utils import group_files_by_imagetype, get_filepaths_from_directory, save_fits_file
+from specpink.spectrum import Spectrum
+from specpink.utils import group_files_by_imagetype, get_filepaths_from_directory, save_fits_file
 
 
 class Reducer:
