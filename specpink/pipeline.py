@@ -5,7 +5,8 @@ class Pipeline:
     def run(self):
         self.reducer.bias_subtraction()
         self.reducer.dark_subtraction()
+        self.reducer.lamp_dark_subtraction()
         self.reducer.flat_fielding()
-        self.reducer.wavelength_calibration()
         spectrum = self.reducer.extract_spectrum()
-        return spectrum
+        calibrated_spectrum = self.reducer.calibrate_spectrum(spectrum)
+        return calibrated_spectrum

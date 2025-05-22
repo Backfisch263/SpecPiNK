@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from .spectrum import Spectrum
-from .utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
+from spectrum import Spectrum
+from utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
 
 
 class Reducer:
@@ -50,7 +50,7 @@ class Reducer:
         """
         bias = self.calibration_data['bias']
         if bias:
-            self.calibration_data['dark'] = self.calibration_data['dark']-bias
+            self.calibration_data['dark'] = np.array(self.calibration_data['dark'])-np.array(bias)
             self.calibration_data['lamp_dark'] = self.calibration_data['lamp_dark']-bias
             self.calibration_data['flat'] = self.calibration_data['flat']-bias
             self.calibration_data['lamp'] = self.calibration_data['lamp']-bias
@@ -128,21 +128,23 @@ class Reducer:
         y = y1 + (y2 - y1) / (x2 - x1) * (x - x1)
         return x.astype(int), y.astype(int)
 
-    def _extract_aperture(self, x_trace, y_trace, aperture_radius=5):
+    def _extract_aperture(self, x_trace, y_trace, aperture_radius=8):
         """
-        Sum along an aperture centered at (x_trace, y_trace).
+        Sum along an aperture centered at (x_trace, y_trace) and return normalized flux.
         """
         science = self.calibration_data['science']
         flux = []
         for x, y_center in zip(x_trace, y_trace):
             y_min = int(y_center - aperture_radius)
             y_max = int(y_center + aperture_radius + 1)
-            flux.append(np.sum(science[y_min:y_max, x]))
-        return np.array(flux)
+            flux_val = np.sum(science[y_min:y_max, x])/(y_max-y_min-1)
+            flux.append(flux_val)
+        flux = np.array(flux)/np.max(flux)
+        return flux
 
     def extract_spectrum(self):
         """
-        Extract a 1D spectrum from the calibrated 2D science frame.
+        Extract a 1D spectrum from the calibrated 2D science or reference frame.
 
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) generation of a compressed spectrum.
@@ -166,5 +168,5 @@ class Reducer:
         wavelength = spectrum.wavelength
         flux = spectrum.flux
 
-        return self.calibration_data
+        return Spectrum(wavelength, flux)
 

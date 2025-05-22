@@ -49,7 +49,7 @@ def save_fits_file(filepath,  data, header=None, overwrite=True):
     fits.writeto(filepath, data, header, overwrite=overwrite)
     print(f"Saved FITS file: {filepath}")
 
-def group_files_by_imagetype(files, keywords=('bias', 'dark', 'flat', 'lamp', 'light')):
+def group_files_by_imagetype(files, keywords=('bias', 'dark', 'lamp_dark', 'flat', 'lamp', 'light')):
     """
     Group FITS files by IMAGETYP keyword.
 
@@ -68,7 +68,7 @@ def group_files_by_imagetype(files, keywords=('bias', 'dark', 'flat', 'lamp', 'l
         data, header = load_fits_file(file)
         imagetyp = get_imagetype(header).lower()
         for key in keywords:
-            if key in imagetyp:
+            if key == imagetyp:
                 groups[key].append(data)
                 headers[key].append(header)
                 break  # stop after first match to avoid double-counting

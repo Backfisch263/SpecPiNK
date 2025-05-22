@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
 
 class Spectrum:
     def __init__(self, wavelength, flux):
@@ -26,3 +27,11 @@ class Spectrum:
         plt.title(title)
         plt.legend()
         plt.show()
+
+    def find_emission_peaks(self):
+        """
+        Find emission line peaks in the spectrum.
+        """
+        peaks, _ = find_peaks(self.flux, prominence=0.01)
+        peaks = peaks / len(self.wavelength)
+        return peaks

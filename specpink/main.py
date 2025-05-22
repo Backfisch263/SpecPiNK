@@ -1,16 +1,12 @@
-from .reducer import Reducer
-from .pipeline import Pipeline
+from reducer import Reducer
+from calibrator import Calibrator
+from pipeline import Pipeline
+import matplotlib.pyplot as plt
+import numpy as np
 
-# WIP
-"""
-science_file = 'science_frame.fits'
-calibration_files = ['bias1.fits', 'bias2.fits', 'flat1.fits', 'flat2.fits']
+data_path = '/home/andreas/PycharmProjects/SpecPiNk/Data/prepared/'
+target_path = '/home/andreas/PycharmProjects/SpecPiNk/Data/test'
 
-reducer = Reducer(calibration_files)
-pipeline = Pipeline(reducer)
-
-final_spectrum = pipeline.run()
-
-# Plot result
-final_spectrum.plot("Final Reduced Spectrum")
-"""
+raw = Calibrator(data_path)
+stacks = raw.create_stacks()
+stacks['flat'] = raw.normalize_flat()

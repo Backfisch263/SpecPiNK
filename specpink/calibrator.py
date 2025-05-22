@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .utils import save_fits_file, group_files_by_imagetype
+from utils import save_fits_file, group_files_by_imagetype, get_filepaths_from_directory
 
 
 class Calibrator:
@@ -14,9 +14,9 @@ class Calibrator:
         Initialize the Calibrator with a list of FITS files or directory path.
 
         Parameters:
-            filepath (list of str): Paths to FITS files to be processed.
+            filepath (str): Paths to FITS files to be processed.
         """
-        self.files = filepath
+        self.files = get_filepaths_from_directory(filepath)
         self.stacks = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
         self.stack_headers = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
         self.master_frames = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
@@ -52,7 +52,7 @@ class Calibrator:
             ndarray or None: Normalized flat field image or None if unavailable.
         """
         if self.stacks['flat'] is not None:
-            flat = np.copy(self.stacks['flat'])
+            flat = self.stacks['flat']
             flat_gaussfiltered = gaussian_filter(flat, sigma=5)
             flat_normal = flat - flat_gaussfiltered
             flat_normal = flat_normal - np.min(flat_normal)
