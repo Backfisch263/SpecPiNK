@@ -6,3 +6,6 @@ Data/
 *.pdf
 docs/build
 *.html
+build/
+dist/
+*.egg-info/

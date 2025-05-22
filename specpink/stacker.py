@@ -17,9 +17,9 @@ class Stacker:
             filepath (str): Paths to FITS files to be processed.
         """
         self.files = get_filepaths_from_directory(filepath)
-        self.stacks = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
-        self.stack_headers = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
-        self.master_frames = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
+        self.stacks = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.stack_headers = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.master_frames = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
 
     def create_stacks(self):
         """
@@ -38,7 +38,7 @@ class Stacker:
                 self.stack_headers[key] = stack_header
                 print(f"Created {key} stack from {len(groups[key])} files")
             else:
-                self.stacks[key] = []
+                self.stacks[key] = None
                 print(f"No {key} frames provided.")
 
         return self.stacks
@@ -50,7 +50,7 @@ class Stacker:
         Returns:
             ndarray or None: Normalized flat field image or None if unavailable.
         """
-        if self.stacks['flat'] is not []:
+        if self.stacks['flat'] is not None:
             flat = self.stacks['flat']
             flat_gaussfiltered = gaussian_filter(flat, sigma=5)
             flat_normal = flat - flat_gaussfiltered
@@ -69,16 +69,16 @@ class Stacker:
         Returns:
             dict: Dictionary of master calibration frames.
         """
-        if self.stacks == {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}:
+        if all(v is None for v in self.stacks.values()):
             print('No stacks created yet. Run create_stacks() first.')
             return None
         else:
             for key in self.stacks:
-                if self.stacks[key] is not []:
+                if self.stacks[key] is not None:
                     self.master_frames[key] = self.stacks[key]
 
             flat_normal = self.normalize_flat()
-            if flat_normal is not []:
+            if flat_normal is not None:
                 self.master_frames['flat'] = flat_normal
                 print('Normalized flat field added to master frames.')
             else:
@@ -94,7 +94,7 @@ class Stacker:
             output_dir (str): Directory where master FITS files will be saved.
         """
         for key, frame in self.master_frames.items():
-            if frame is not []:
+            if frame is not None:
                 header = self.stack_headers[key]
                 filename = os.path.join(output_dir, f"stacked_{key}.fits")
                 save_fits_file(filename, frame, header)
