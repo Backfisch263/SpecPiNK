@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .utils import load_fits_file, get_imagetype, save_fits_file, group_files_by_imagetype
+from .utils import save_fits_file, group_files_by_imagetype
 
 
 class Calibrator:
@@ -17,9 +17,9 @@ class Calibrator:
             filepath (list of str): Paths to FITS files to be processed.
         """
         self.files = filepath
-        self.stacks = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
-        self.stack_headers = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
-        self.master_frames = {'bias': None, 'dark': None, 'lamp_dark': None, 'flat': None, 'lamp': None, 'light': None}
+        self.stacks = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
+        self.stack_headers = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
+        self.master_frames = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
 
     def create_stacks(self):
         """
@@ -28,8 +28,6 @@ class Calibrator:
         Returns:
             dict: Dictionary of stacked image arrays by type.
         """
-        groups = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
-        headers = {'bias': [], 'dark': [], 'lamp_dark': [], 'flat': [], 'lamp': [], 'light': []}
         groups, headers = group_files_by_imagetype(self.files)
 
         for key in groups:
@@ -41,7 +39,7 @@ class Calibrator:
                 self.stack_headers[key] = stack_header
                 print(f"Created {key} stack from {len(groups[key])} files")
             else:
-                self.stacks[key] = None
+                self.stacks[key] = []
                 print(f"No {key} frames provided.")
 
         return self.stacks
@@ -81,7 +79,7 @@ class Calibrator:
                     self.master_frames[key] = self.stacks[key]
 
                 flat_normal = self.normalize_flat()
-                if flat_normal is not None:
+                if flat_normal is not []:
                     self.master_frames['flat'] = flat_normal
                     print('Normalized flat field added to master frames.')
                 else:

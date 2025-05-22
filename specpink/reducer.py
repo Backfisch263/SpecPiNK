@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 from .spectrum import Spectrum
 from .utils import load_fits_file, get_imagetype, group_files_by_imagetype, get_filepaths_from_directory
@@ -16,7 +17,7 @@ class Reducer:
         calibration_headers : dict
             Dictionary of headers for each calibration frame type.
     """
-    def __init__(self, calibration_files_path):
+    def __init__(self, calibration_files_path, target_path):
         """
         Initialize the Reducer with the path to calibration files.
 
@@ -24,6 +25,7 @@ class Reducer:
             calibration_files_path (str): Path to directory containing calibration FITS files.
         """
         self.calibration_files_path = calibration_files_path
+        self.target_path = target_path
         self.calibration_data = self._load_calibration()[0]
         self.calibration_headers = self._load_calibration()[1]
 
@@ -84,7 +86,6 @@ class Reducer:
         """
         lamp_dark = self.calibration_data['lamp_dark']
         if lamp_dark:
-            self.calibration_data['flat'] = self.calibration_data['flat'] - lamp_dark
             self.calibration_data['lamp'] = self.calibration_data['lamp'] - lamp_dark
             print('Lamp Dark frame subtracted from flat and lamp frames.')
             return self.calibration_data
@@ -94,7 +95,7 @@ class Reducer:
 
     def flat_fielding(self):
         """
-        Apply flat-field correction to the calibration frames.
+        Apply flat-field correction to the science and reference frames.
 
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) flat correction.
@@ -102,20 +103,42 @@ class Reducer:
         flat = self.calibration_data['flat']
         if flat:
             self.calibration_data['science'] = self.calibration_data['science']/flat
-            print('Flat field applied to science frame.')
+            self.calibration_data['lamp'] = self.calibration_data['lamp']/flat
+            print('Flat field applied to science frame and reference frames.')
             return self.calibration_data
         else:
             print('No flat field provided. Returning uncorrected science frame.')
             return self.calibration_data
 
-    def wavelength_calibration(self):
-        """
-        Apply wavelength calibration to the science data.
+    def _select_trace_points(self):
+        science = self.calibration_data['science']
+        plt.imshow(science, origin='lower', cmap='gray', aspect='auto')
+        plt.title("Click 2 points along the center of the spectrum")
+        points = plt.ginput(2)
+        plt.close()
+        return points
 
-        Returns:
-            self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) wavelength calibration.
+    def _compute_trace(self, p1, p2):
         """
-        return self.calibration_data
+        Returns (x, y) coordinates for the trace line.
+        """
+        x1, y1 = p1
+        x2, y2 = p2
+        x = np.arange(int(x1), int(x2) + 1)
+        y = y1 + (y2 - y1) / (x2 - x1) * (x - x1)
+        return x.astype(int), y.astype(int)
+
+    def _extract_aperture(self, x_trace, y_trace, aperture_radius=5):
+        """
+        Sum along an aperture centered at (x_trace, y_trace).
+        """
+        science = self.calibration_data['science']
+        flux = []
+        for x, y_center in zip(x_trace, y_trace):
+            y_min = int(y_center - aperture_radius)
+            y_max = int(y_center + aperture_radius + 1)
+            flux.append(np.sum(science[y_min:y_max, x]))
+        return np.array(flux)
 
     def extract_spectrum(self):
         """
@@ -124,5 +147,24 @@ class Reducer:
         Returns:
             self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) generation of a compressed spectrum.
         """
+        p1, p2 = self._select_trace_points()
+
+        x_trace, y_trace = self._compute_trace(p1, p2)
+
+        flux = self._extract_aperture(x_trace, y_trace)
+        wavelength = x_trace.astype(float)
+
+        return Spectrum(wavelength, flux)
+
+    def wavelength_calibration(self, spectrum):
+        """
+        Apply wavelength calibration to a 1D spectrum.
+
+        Returns:
+            self.calibration_data (dict): Dictionary with calibration frame data arrays after (attempted) wavelength calibration.
+        """
+        wavelength = spectrum.wavelength
+        flux = spectrum.flux
+
         return self.calibration_data
 
